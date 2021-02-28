@@ -1,0 +1,71 @@
+{
+    "colorPalette" : {
+        "highlight": "#ffffff",
+        "normal": "#cfcfc9",
+        "shade": "#949c98",
+
+        "dark-highlight": "#676c75",
+        "dark-normal": "#40434c",
+        "dark-shade": "#222034",
+
+        "color-highlight": "#30c7a9",
+        "color-normal": "#16977b",
+        "color-shade": "#156861"
+    },
+
+    "mainFrame" : {
+        "padx": 10,
+        "pady": 10,
+        "bg": "#222034"
+    },
+
+    "title" : {
+        "bg": "#222034",
+        "fg": "#ffffff"
+    },
+
+    "gridLabel" : {
+        "bg": "#222034",
+        "fg": "#cfcfc9",
+        "font": ["Verdana", "12"]
+    },
+    
+    "gridHint" : {
+        "bg": "#222034",
+        "fg": "#cfcfc9",
+        "font": ["Verdana", "8"]
+    },
+
+    "separator" : {
+        "height": 0,
+        "width": 0,
+        "bg": "#222034"
+    },
+
+    "entry" : {
+        "relief": "flat",
+        "bd": 0,
+        "bg": "#40434c",
+        "fg": "#ffffff",
+        "selectbackground": "#16977b",
+        "highlightcolor": "#16977b",
+        "highlightbackground": "#40434c",
+        "highlightthickness": 1,
+        "font": ["Courier New", "12"],
+        "insertbackground": "#ffffff"
+    },
+    "entry-hover" : {
+        "bg": "#676c75",
+        "highlightbackground": "#676c75"
+    },
+
+    "button" : {
+        "bd": 2,
+        "relief": "flat",
+        "overrelief": "raised",
+        "bg": "#16977b",
+        "fg": "#222034",
+        "activebackground": "#156861",
+        "font": ["Verdana", "18"]
+    }
+}
