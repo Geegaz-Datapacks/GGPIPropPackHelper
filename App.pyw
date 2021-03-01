@@ -30,6 +30,11 @@ class App(Frame):
 
             self.configure(styles["mainFrame"])
             self.createWidgets(styles)
+
+            self.load_paths()
+            self.set_namespace()
+            self.set_id()
+            
         except Exception as ex:
             self.show_error(str(ex), True)
     
@@ -219,24 +224,48 @@ class App(Frame):
         self.bind_class("Entry","<Leave>", lambda event,style=styles["entry"]: self.set_style(event,style))
         self.bind_class("Text","<Enter>", lambda event,style=styles["entry-hover"]: self.set_style(event,style))
         self.bind_class("Text","<Leave>", lambda event,style=styles["entry"]: self.set_style(event,style))
-
-        self.set_namespace()
-        self.set_id()
     
-    def set_namespace(self, var=None, index=None, mode=None):
+    def save_paths(self):
+        paths = {
+            "source": self.sourcepathEntry.get(),
+            "target_resources": self.resourcespathEntry.get(),
+            "target_data": self.datapathEntry.get()
+        }
+        with open(f"Resources/paths.json", "w") as f:
+            f.write(json.dumps(paths, indent=4))
+        
+        return paths
+    
+    def load_paths(self):
+        paths = {
+            "source": "",
+            "target_resources": "",
+            "target_data": ""
+        }
+        try:
+            with open(f"Resources/paths.json", "r") as f:
+                paths = json.load(f)
+        except:
+            pass
+        
+        self.sourcepathVar.set(paths["source"])
+        self.resourcespathVar.set(paths["target_resources"])
+        self.datapathVar.set(paths["target_data"])
+
+    def set_namespace(self, name=None, index=None, mode=None, var=None):
         namespace = self.nameEntry.get().lower().replace(" ", "_")
         source = self.sourcepathEntry.get()
         if namespace == "":
             if source == "":
                 self.nameHint.configure(text="Please specify a pack name")
             else:
-                name = source.lsplit("/")[0]
+                name = source.split("/")[-1]
                 namespace = name.lower().replace(" ", "_")
                 self.nameHint.configure(text=f"Using source folder name \"{name}\"\nDatapack will be generated with the namespace \"{namespace}\"")
         else:
             self.nameHint.configure(text=f"Datapack will be generated with the namespace \"{namespace}\"")
     
-    def set_id(self, var=None, index=None, mode=None):
+    def set_id(self, name=None, index=None, mode=None, var=None):
         textid = self.idEntry.get()[:3]
         self.idVar.set(textid)
         if textid == "":
@@ -256,21 +285,22 @@ class App(Frame):
             target_var.set(path)
 
     def generate(self):
-        paths = {
-            "source": self.sourcepathEntry.get(),
-            "target_resources": self.resourcespathEntry.get(),
-            "target_data": self.datapathEntry.get()
-        }
+        paths = self.save_paths()
         for path in paths:
             if paths[path] == "":
                 paths[path] = "."
 
         name = self.nameEntry.get()
-        namespace = self.nameEntry.get().lower().replace(" ", "_")
+        if name == "" and paths["source"] != "":
+            name = paths["source"].split("/")[-1]
+
+        namespace = name.lower().replace(" ", "_")
         description = self.descriptionText.get("1.0",END)
-        icon = self.iconEntry.get()
         base_id = self.idEntry.get()
 
+        icon = self.iconEntry.get()
+        if icon == "":
+            icon = "minecraft:clay_ball"
         if icon.startswith("@model"):
             custom_icon = True
             custom_icon_name = icon.rsplit(":")[0]
