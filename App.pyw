@@ -301,9 +301,9 @@ class App(Frame):
         icon = self.iconEntry.get()
         if icon == "":
             icon = "minecraft:clay_ball"
-        if icon.startswith("@model"):
+        elif icon.startswith("@model"):
             custom_icon = True
-            custom_icon_name = icon.rsplit(":")[0]
+            custom_icon_name = icon.split(":")[-1]
             custom_icon_id = 0
         else:
             custom_icon = False
@@ -349,7 +349,7 @@ class App(Frame):
         for filepath in listdir(f"{source_modelpath}/prop"):
             if filepath.endswith(".json"):
                 model_id += 1
-                name = filepath.rsplit('.', 1)[0]
+                model_name = filepath.rsplit('.', 1)[0]
                 if model_id//10000 > 170:
                     raise IndexError(
                         "Too many models (>10000)")
@@ -358,11 +358,11 @@ class App(Frame):
                         "predicate": {
                             "custom_model_data": model_id
                         },
-                        "model": f"prop/{name}"
+                        "model": f"prop/{model_name}"
                     }
                 )
                 if custom_icon:
-                    if custom_icon_name == name:
+                    if custom_icon_name == model_name:
                         custom_icon_id = model_id
 
         model_file["overrides"] = model_overrides
@@ -373,7 +373,7 @@ class App(Frame):
             
         
         #───────────────────────────────────── Data pack generation ─────────────────────────────────────#
-        self.generate_status += "Data Pack generation"
+        self.generate_status = "Data Pack generation"
         
         create_dirs(loottablespath)
         create_dirs(advancementspath)
@@ -388,7 +388,7 @@ class App(Frame):
         self.generate_status += "\n- Finished writing:"
 
         for model in model_overrides:
-            model_name = model["model"].lsplit("/")[0]
+            model_name = model["model"].split("/")[-1]
             model_id = model["predicate"]["custom_model_data"]
             loot_table = {
                 "pools": [
