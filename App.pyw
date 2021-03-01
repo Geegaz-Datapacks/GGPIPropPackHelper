@@ -104,8 +104,8 @@ class App(Frame):
         self.openImage = PhotoImage(file="Resources/open.png")
         self.titleImage = PhotoImage(file="Resources/icon.png")
 
-        self.nameHintVar = StringVar()
-        self.idHintVar = StringVar()
+        self.nameVar = StringVar()
+        self.idVar = StringVar()
         self.sourcepathVar = StringVar()
         self.resourcespathVar = StringVar()
         self.datapathVar = StringVar()
@@ -150,19 +150,19 @@ class App(Frame):
         current_row += 1
         self.idLabel = Label(self, styles["gridLabel"], text="Base model id: ")
         self.idLabel.grid(column=0, row= current_row, sticky=NW)
-        self.idEntry = Entry(self, styles["entry"], width=3)
+        self.idEntry = Entry(self, styles["entry"], width=3, textvar=self.idVar)
         self.idEntry.grid(column=1, row= current_row, sticky=W)
         current_row += 1
-        self.idHint = Label(self, styles["gridHint"], textvar=self.idHintVar)
+        self.idHint = Label(self, styles["gridHint"])
         self.idHint.grid(column=1, row= current_row, sticky=NW)
 
         current_row += 1
         self.nameLabel = Label(self, styles["gridLabel"], text="Pack name:")
         self.nameLabel.grid(column=0, row= current_row, sticky=NW)
-        self.nameEntry = Entry(self, styles["entry"], width=60)
+        self.nameEntry = Entry(self, styles["entry"], width=60, textvar=self.nameVar)
         self.nameEntry.grid(column=1, row= current_row, sticky=W)
         current_row += 1
-        self.nameHint = Label(self, styles["gridHint"], textvar=self.nameHintVar)
+        self.nameHint = Label(self, styles["gridHint"], height=2, justify=LEFT)
         self.nameHint.grid(column=1, row= current_row, sticky=NW)
 
         current_row += 1
@@ -212,8 +212,9 @@ class App(Frame):
         self.generateButton = Button(self, styles["button"], text="Generate", command=generate_callback)
         self.generateButton.grid(column=0, row= current_row, columnspan=3)
 
-        self.nameEntry.bind("<KeyRelease>", self.set_namespace)
-        self.idEntry.bind("<KeyRelease>", self.set_id)
+        self.idVar.trace_add("write", self.set_id)
+        self.nameVar.trace_add("write", self.set_namespace)
+        self.sourcepathVar.trace_add("write", self.set_namespace)
         self.bind_class("Entry","<Enter>", lambda event,style=styles["entry-hover"]: self.set_style(event,style))
         self.bind_class("Entry","<Leave>", lambda event,style=styles["entry"]: self.set_style(event,style))
         self.bind_class("Text","<Enter>", lambda event,style=styles["entry-hover"]: self.set_style(event,style))
@@ -222,23 +223,29 @@ class App(Frame):
         self.set_namespace()
         self.set_id()
     
-    def set_namespace(self, event=None):
+    def set_namespace(self, var=None, index=None, mode=None):
         namespace = self.nameEntry.get().lower().replace(" ", "_")
+        source = self.sourcepathEntry.get()
         if namespace == "":
-            self.nameHintVar.set("Please specify a pack name")
+            if source == "":
+                self.nameHint.configure(text="Please specify a pack name")
+            else:
+                name = source.rsplit("/")[0]
+                namespace = name.lower().replace(" ", "_")
+                self.nameHint.configure(text=f"Using source folder name \"{name}\"\nDatapack will be generated with the namespace \"{namespace}\"")
         else:
-            self.nameHintVar.set(f"Datapack will be generated with the namespace \"{namespace}\"")
+            self.nameHint.configure(text=f"Datapack will be generated with the namespace \"{namespace}\"")
     
-    def set_id(self, event=None):
-        textid = self.idEntry.get()
+    def set_id(self, var=None, index=None, mode=None):
+        textid = self.idEntry.get()[:3]
+        self.idVar.set(textid)
         if textid == "":
-            self.idHintVar.set("ex: 170, 500, 483...")
+            self.idHint.configure(text="ex: 170, 500, 483...")
         else:
             if textid.isnumeric():
-                self.idHintVar.set(f"will be used as {int(textid[:3])*10000}")
+                self.idHint.configure(text=f"will be used as {int(textid[:3])*10000}")
             else:
-                self.idHintVar.set("invalid id")
-        
+                self.idHint.configure(text="invalid id")
     
     def set_style(self, event, style):
         event.widget.configure(style)
@@ -266,7 +273,7 @@ class App(Frame):
 
         if icon.startswith("@model"):
             custom_icon = True
-            custom_icon_name = icon.rsplit(":",1)[1]
+            custom_icon_name = icon.rsplit(":")[0]
             custom_icon_id = 0
         else:
             custom_icon = False
