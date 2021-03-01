@@ -230,7 +230,7 @@ class App(Frame):
             if source == "":
                 self.nameHint.configure(text="Please specify a pack name")
             else:
-                name = source.rsplit("/")[0]
+                name = source.lsplit("/")[0]
                 namespace = name.lower().replace(" ", "_")
                 self.nameHint.configure(text=f"Using source folder name \"{name}\"\nDatapack will be generated with the namespace \"{namespace}\"")
         else:
@@ -358,7 +358,7 @@ class App(Frame):
         self.generate_status += "\n- Finished writing:"
 
         for model in model_overrides:
-            model_name = model["model"].split("/")[-1]
+            model_name = model["model"].lsplit("/")[0]
             model_id = model["predicate"]["custom_model_data"]
             loot_table = {
                 "pools": [
