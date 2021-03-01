@@ -50,11 +50,17 @@ class App(Frame):
     # ├8───────────────────────┴───────┬9┐
     # └────────────────────────────────┴─┘
     # -10---------------------------------
+    # ┌11─────────┬12───┐
+    # └───────────┴─────┘
     # ┌11─────────┬12─────────────────┐
     # └───────────┼13─────────────────┤
     #             └───────────────────┘
     # ┌14─────────┬15─────────────────┐
     # └───────────┼16─────────────────┤
+    #             └───────────────────┘
+    # ┌14─────────┬15─────────────────┐
+    # └───────────┤                   │
+    #             │                   │
     #             └───────────────────┘
     # -17---------------------------------
     # ┌18──────────────────────┐
@@ -99,6 +105,7 @@ class App(Frame):
         self.titleImage = PhotoImage(file="Resources/icon.png")
 
         self.nameHintVar = StringVar()
+        self.idHintVar = StringVar()
         self.sourcepathVar = StringVar()
         self.resourcespathVar = StringVar()
         self.datapathVar = StringVar()
@@ -109,7 +116,6 @@ class App(Frame):
                 self.generate()
             except Exception as ex:
                 self.show_error(f"Stopped at: {self.generate_status}\n{str(ex)}", False)
-
 
         current_row = 0
         self.headerFrame = Frame(self, bg="#222034")
@@ -140,6 +146,15 @@ class App(Frame):
         current_row += 1
         self.separator1 = Label(self, styles["separator"])
         self.separator1.grid(column=0, row= current_row, columnspan=3, sticky=E+W)
+
+        current_row += 1
+        self.idLabel = Label(self, styles["gridLabel"], text="Base model id: ")
+        self.idLabel.grid(column=0, row= current_row, sticky=NW)
+        self.idEntry = Entry(self, styles["entry"], width=3)
+        self.idEntry.grid(column=1, row= current_row, sticky=W)
+        current_row += 1
+        self.idHint = Label(self, styles["gridHint"], textvar=self.idHintVar)
+        self.idHint.grid(column=1, row= current_row, sticky=NW)
 
         current_row += 1
         self.nameLabel = Label(self, styles["gridLabel"], text="Pack name:")
@@ -198,19 +213,32 @@ class App(Frame):
         self.generateButton.grid(column=0, row= current_row, columnspan=3)
 
         self.nameEntry.bind("<KeyRelease>", self.set_namespace)
+        self.idEntry.bind("<KeyRelease>", self.set_id)
         self.bind_class("Entry","<Enter>", lambda event,style=styles["entry-hover"]: self.set_style(event,style))
         self.bind_class("Entry","<Leave>", lambda event,style=styles["entry"]: self.set_style(event,style))
         self.bind_class("Text","<Enter>", lambda event,style=styles["entry-hover"]: self.set_style(event,style))
         self.bind_class("Text","<Leave>", lambda event,style=styles["entry"]: self.set_style(event,style))
 
         self.set_namespace()
+        self.set_id()
     
-    def set_namespace(self, event=None) -> bool:
+    def set_namespace(self, event=None):
         namespace = self.nameEntry.get().lower().replace(" ", "_")
         if namespace == "":
             self.nameHintVar.set("Please specify a pack name")
         else:
             self.nameHintVar.set(f"Datapack will be generated with the namespace \"{namespace}\"")
+    
+    def set_id(self, event=None):
+        textid = self.idEntry.get()
+        if textid == "":
+            self.idHintVar.set("ex: 170, 500, 483...")
+        else:
+            if textid.isnumeric():
+                self.idHintVar.set(f"will be used as {int(textid[:3])*10000}")
+            else:
+                self.idHintVar.set("invalid id")
+        
     
     def set_style(self, event, style):
         event.widget.configure(style)
@@ -219,7 +247,7 @@ class App(Frame):
         path = tkdialog.askdirectory()
         if path != "":
             target_var.set(path)
-    
+
     def generate(self):
         paths = {
             "source": self.sourcepathEntry.get(),
@@ -234,6 +262,7 @@ class App(Frame):
         namespace = self.nameEntry.get().lower().replace(" ", "_")
         description = self.descriptionText.get("1.0",END)
         icon = self.iconEntry.get()
+        base_id = self.idEntry.get()
 
         if icon.startswith("@model"):
             custom_icon = True
@@ -257,7 +286,13 @@ class App(Frame):
         #───────────────────────────────────── Resource pack generation ─────────────────────────────────────#
         self.generate_status = "Resource pack generation"
 
-        model_id = 1700000
+        if base_id.isnumeric():
+            model_id = int(base_id[:3])*10000
+        elif base_id == "":
+            raise Exception("Empty id")
+        else:
+            raise TypeError(f"Invalid id: {base_id}")
+
         model_overrides = []
         model_file = {
             "parent": "item/generated",
@@ -387,16 +422,21 @@ class App(Frame):
             "display": {
                 "announce_to_chat": "false",
                 "description": f"{description}",
-                "icon": {
-                    "item": "minecraft:clay_ball"
-                },
+
                 "show_toast": "false",
                 "title": f"{name}"
             },
             "parent": "geegaz:ggpi/ggpi"
         }
         if custom_icon:
-            advancement["display"]["icon"]["nbt"] = "{CustomModelData:%s}" % custom_icon_id
+            advancement["display"]["icon"] = {
+                    "item": "minecraft:clay_ball",
+                    "nbt" : "{CustomModelData:%s}" % custom_icon_id 
+                }
+        else:
+            advancement["display"]["icon"] = {
+                    "item": "%s" % icon
+                }
 
         with open("%s/%s.json" % (advancementspath, namespace), "w") as f:
             f.write(json.dumps(advancement, indent=4))
