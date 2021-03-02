@@ -31,7 +31,7 @@ class App(Frame):
             self.configure(styles["mainFrame"])
             self.createWidgets(styles)
 
-            self.load_paths()
+            self.load_data()
             self.set_namespace()
             self.set_id()
             
@@ -111,6 +111,7 @@ class App(Frame):
 
         self.nameVar = StringVar()
         self.idVar = StringVar()
+        self.iconVar = StringVar()
         self.sourcepathVar = StringVar()
         self.resourcespathVar = StringVar()
         self.datapathVar = StringVar()
@@ -173,7 +174,7 @@ class App(Frame):
         current_row += 1
         self.iconLabel = Label(self, styles["gridLabel"], text="Pack icon: ")
         self.iconLabel.grid(column=0, row= current_row, sticky=NW)
-        self.iconEntry = Entry(self, styles["entry"], width=60)
+        self.iconEntry = Entry(self, styles["entry"], width=60, textvar=self.iconVar)
         self.iconEntry.grid(column=1, row= current_row, sticky=W)
         current_row += 1
         self.iconHint = Label(self, styles["gridHint"], text="minecraft:... or @model:... to use a model from the pack")
@@ -225,32 +226,47 @@ class App(Frame):
         self.bind_class("Text","<Enter>", lambda event,style=styles["entry-hover"]: self.set_style(event,style))
         self.bind_class("Text","<Leave>", lambda event,style=styles["entry"]: self.set_style(event,style))
     
-    def save_paths(self):
-        paths = {
+    def save_data(self):
+        data = {
             "source": self.sourcepathEntry.get(),
             "target_resources": self.resourcespathEntry.get(),
-            "target_data": self.datapathEntry.get()
+            "target_data": self.datapathEntry.get(),
+            "id": self.idEntry.get(),
+            "name": self.nameEntry.get(),
+            "icon": self.iconEntry.get(),
+            "description": self.descriptionText.get("1.0",END)
         }
         with open(f"Resources/paths.json", "w") as f:
-            f.write(json.dumps(paths, indent=4))
+            f.write(json.dumps(data, indent=4))
         
-        return paths
+        return data
     
-    def load_paths(self):
-        paths = {
+    def load_data(self):
+        data = {
             "source": "",
             "target_resources": "",
-            "target_data": ""
+            "target_data": "",
+            "id": "",
+            "name": "",
+            "icon": "",
+            "description": ""
         }
         try:
             with open(f"Resources/paths.json", "r") as f:
-                paths = json.load(f)
+                data = json.load(f)
         except:
             pass
         
-        self.sourcepathVar.set(paths["source"])
-        self.resourcespathVar.set(paths["target_resources"])
-        self.datapathVar.set(paths["target_data"])
+        self.sourcepathVar.set(data["source"])
+        self.resourcespathVar.set(data["target_resources"])
+        self.datapathVar.set(data["target_data"])
+        self.idVar.set(data["id"])
+        self.nameVar.set(data["name"])
+        self.iconVar.set(data["icon"])
+
+        self.descriptionText.delete("1.0", END)
+        self.descriptionText.insert(END, data["description"])
+
 
     def set_namespace(self, name=None, index=None, mode=None, var=None):
         namespace = self.nameEntry.get().lower().replace(" ", "_")
@@ -285,20 +301,20 @@ class App(Frame):
             target_var.set(path)
 
     def generate(self):
-        paths = self.save_paths()
-        for path in paths:
-            if paths[path] == "":
-                paths[path] = "."
+        data = self.save_data()
+        for path in data:
+            if data[path] == "":
+                data[path] = "."
 
-        name = self.nameEntry.get()
-        if name == "" and paths["source"] != "":
-            name = paths["source"].split("/")[-1]
+        name = data["name"]
+        if name == "" and data["source"] != "":
+            name = data["source"].split("/")[-1]
 
         namespace = name.lower().replace(" ", "_")
-        description = self.descriptionText.get("1.0",END)
-        base_id = self.idEntry.get()
+        description = data["description"].rstrip('\n')
+        base_id = data["id"]
 
-        icon = self.iconEntry.get()
+        icon = data["icon"]
         if icon == "":
             icon = "minecraft:clay_ball"
         elif icon.startswith("@model"):
@@ -308,10 +324,10 @@ class App(Frame):
         else:
             custom_icon = False
 
-        source_modelpath = f"{paths['source']}/assets/minecraft/models"
-        target_modelpath = f"{paths['target_resources']}/assets/minecraft/models"
-        loottablespath = f"{paths['target_data']}/data/{namespace}/loot_tables/ggpi/items/prop"
-        advancementspath = f"{paths['target_data']}/data/{namespace}/advancements/ggpi"
+        source_modelpath = f"{data['source']}/assets/minecraft/models"
+        target_modelpath = f"{data['target_resources']}/assets/minecraft/models"
+        loottablespath = f"{data['target_data']}/data/{namespace}/loot_tables/ggpi/items/prop"
+        advancementspath = f"{data['target_data']}/data/{namespace}/advancements/ggpi"
 
         mcmeta = {
             "pack": {
@@ -342,7 +358,7 @@ class App(Frame):
         self.generate_status += "\n- Copied source resources to destination"
         
 
-        with open(f"{paths['target_resources']}/pack.mcmeta", "w") as f:
+        with open(f"{data['target_resources']}/pack.mcmeta", "w") as f:
             f.write(json.dumps(mcmeta, indent=4))
             self.generate_status += f"\n- Finished writing {f.name}"
 
@@ -378,7 +394,7 @@ class App(Frame):
         create_dirs(loottablespath)
         create_dirs(advancementspath)
 
-        with open(f"{paths['target_data']}/pack.mcmeta", "w") as f:
+        with open(f"{data['target_data']}/pack.mcmeta", "w") as f:
             f.write(json.dumps(mcmeta, indent=4))
             self.generate_status += f"\n- Finished writing {f.name}"
 
@@ -481,7 +497,7 @@ class App(Frame):
         
         #───────────────────────────────────── Finished ─────────────────────────────────────#
         self.generate_status = "\n Finished"
-        message = f"Resourcepack sucessfully created in:\n{paths['target_resources']}\n\nDatapack sucessfully created in:\n{paths['target_data']}\n"
+        message = f"Resourcepack sucessfully created in:\n{data['target_resources']}\n\nDatapack sucessfully created in:\n{data['target_data']}\n"
         tkmessage.showinfo("Sucess", message)
 
 
