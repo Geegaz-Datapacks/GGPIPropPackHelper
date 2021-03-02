@@ -443,6 +443,9 @@ class App(Frame):
             f.write(json.dumps({"pools": pools}, indent=4))
             self.generate_status += f"\n- Finished writing {f.name}"
         
+        adv_name = name
+        if len(name) < 30:
+            adv_name += " "*(30-len(name))
         advancement = {
             "criteria": {
                 "trigger": {
@@ -454,7 +457,7 @@ class App(Frame):
                 "description": f"{description}",
 
                 "show_toast": "false",
-                "title": f"{name}"
+                "title": f"{adv_name}"
             },
             "parent": "geegaz:ggpi/ggpi"
         }
