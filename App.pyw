@@ -43,66 +43,6 @@ class App(Frame):
         if fatal:
             raise SystemExit
 
-    # ┌1────────────────────────┐  ┌5────┐
-    # │┌2───────┐┌3─────────┐   │  └─────┘
-    # ││        ││          │   │
-    # ││        │├4─────────┴──┐│
-    # ││        │└─────────────┘│
-    # │└────────┘               │
-    # └─────────────────────────┘
-    # -6----------------------------------
-    # ┌7───────────────────────┐
-    # ├8───────────────────────┴───────┬9┐
-    # └────────────────────────────────┴─┘
-    # -10---------------------------------
-    # ┌11─────────┬12───┐
-    # └───────────┴─────┘
-    # ┌11─────────┬12─────────────────┐
-    # └───────────┼13─────────────────┤
-    #             └───────────────────┘
-    # ┌14─────────┬15─────────────────┐
-    # └───────────┼16─────────────────┤
-    #             └───────────────────┘
-    # ┌14─────────┬15─────────────────┐
-    # └───────────┤                   │
-    #             │                   │
-    #             └───────────────────┘
-    # -17---------------------------------
-    # ┌18──────────────────────┐
-    # ├19──────────────────────┴───────┬20
-    # └────────────────────────────────┴─┘
-    # ┌21──────────────────────┐
-    # ├22──────────────────────┴───────┬23
-    # └────────────────────────────────┴─┘
-    # -24---------------------------------
-    #             ┌25────────┐
-    #             │          │
-    #             └──────────┘
-    #  1: headerFrame
-    #  2: ├ headerLabelImage
-    #  3: ├ headerLabelGGPI
-    #  4: └ headerLabelTitle
-    #  5: headerLabelAuthor
-    #  6: separator1
-    # 21: sourcepathLabel
-    # 22: sourcepathEntry
-    # 23: sourcepathButton
-    # 10: separator1
-    # 11: nameLabel
-    # 12: nameEntry
-    # 13: iconLabel
-    # 14: iconEntry
-    # 15: descriptionLabel
-    # 16: descriptionText
-    # 17: separator2
-    # 18: resourcespathLabel
-    # 19: resourcespathEntry
-    # 20: resourcespathButton
-    # 21: datapathLabel
-    # 22: datapathEntry
-    # 23: datapathButton
-    # 24: separator3
-    # 25: generateButton
     def createWidgets(self, styles):
         """Create and place all the widgets"""
 
@@ -111,6 +51,7 @@ class App(Frame):
 
         self.nameVar = StringVar()
         self.idVar = StringVar()
+        self.itemVar = StringVar()
         self.iconVar = StringVar()
         self.sourcepathVar = StringVar()
         self.resourcespathVar = StringVar()
@@ -154,10 +95,16 @@ class App(Frame):
         self.separator1.grid(column=0, row= current_row, columnspan=3, sticky=E+W)
 
         current_row += 1
-        self.idLabel = Label(self, styles["gridLabel"], text="Base model id: ")
+        self.idLabel = Label(self, styles["gridLabel"], text="Base item & id: ")
         self.idLabel.grid(column=0, row= current_row, sticky=NW)
-        self.idEntry = Entry(self, styles["entry"], width=3, textvar=self.idVar)
-        self.idEntry.grid(column=1, row= current_row, sticky=W)
+        self.iditemFrame = Frame(self, bg="#222034")
+        self.iditemFrame.grid(column=1, row= current_row, sticky=E+W)
+        self.itemEntry = Entry(self.iditemFrame, styles["entry"], width=56, textvar=self.itemVar)
+        self.itemEntry.grid(column=0, row=0, sticky=W)
+        self.separator1 = Label(self.iditemFrame, styles["separator"])
+        self.separator1.grid(column=1, row=0, sticky=E+W)
+        self.idEntry = Entry(self.iditemFrame, styles["entry"], width=3, textvar=self.idVar)
+        self.idEntry.grid(column=2, row=0, sticky=E)
         current_row += 1
         self.idHint = Label(self, styles["gridHint"])
         self.idHint.grid(column=1, row= current_row, sticky=NW)
@@ -217,8 +164,12 @@ class App(Frame):
         current_row += 1
         self.generateButton = Button(self, styles["button"], text="Generate", command=generate_callback)
         self.generateButton.grid(column=0, row= current_row, columnspan=3)
+        current_row += 1
+        self.generateHint = Label(self, styles["gridHint"])
+        self.generateHint.grid(column=0, row= current_row, columnspan=3)
 
         self.idVar.trace_add("write", self.set_id)
+        self.itemVar.trace_add("write", self.set_id)
         self.nameVar.trace_add("write", self.set_namespace)
         self.sourcepathVar.trace_add("write", self.set_namespace)
         self.bind_class("Entry","<Enter>", lambda event,style=styles["entry-hover"]: self.set_style(event,style))
@@ -232,13 +183,15 @@ class App(Frame):
             "target_resources": self.resourcespathEntry.get(),
             "target_data": self.datapathEntry.get(),
             "id": self.idEntry.get(),
+            "item": self.itemEntry.get(),
             "name": self.nameEntry.get(),
             "icon": self.iconEntry.get(),
-            "description": self.descriptionText.get("1.0",END)
+            "description": self.descriptionText.get("1.0",END).rstrip('\n')
         }
-        with open(f"Resources/paths.json", "w") as f:
+        with open(f"Resources/data.json", "w") as f:
             f.write(json.dumps(data, indent=4))
         
+        self.generateHint.configure(text="Saved parameters")
         return data
     
     def load_data(self):
@@ -247,20 +200,24 @@ class App(Frame):
             "target_resources": "",
             "target_data": "",
             "id": "",
+            "item": "",
             "name": "",
             "icon": "",
             "description": ""
         }
         try:
-            with open(f"Resources/paths.json", "r") as f:
-                data = json.load(f)
+            with open(f"Resources/data.json", "r") as f:
+                load_data = json.load(f)
+                data.update(load_data)
         except:
             pass
+
         
         self.sourcepathVar.set(data["source"])
         self.resourcespathVar.set(data["target_resources"])
         self.datapathVar.set(data["target_data"])
         self.idVar.set(data["id"])
+        self.itemVar.set(data["item"])
         self.nameVar.set(data["name"])
         self.iconVar.set(data["icon"])
 
@@ -282,15 +239,30 @@ class App(Frame):
             self.nameHint.configure(text=f"Datapack will be generated with the namespace \"{namespace}\"")
     
     def set_id(self, name=None, index=None, mode=None, var=None):
-        textid = self.idEntry.get()[:3]
-        self.idVar.set(textid)
-        if textid == "":
-            self.idHint.configure(text="ex: 170, 500, 483...")
+        textid = self.idEntry.get()
+        textitem = self.itemEntry.get()
+        output = ""
+
+        if len(textid)>3:
+            textid = textid[:3]
+            self.idVar.set(textid)
+        
+        if textid == "" and textitem == "":
+            output = "Enter an item and a CMD id to use as a base for props"
         else:
-            if textid.isnumeric():
-                self.idHint.configure(text=f"will be used as {int(textid[:3])*10000}")
+            if textitem == "":
+                output += "Enter an item, "
             else:
-                self.idHint.configure(text="invalid id")
+                output += f"Using {textitem}, "
+            
+            if textid == "":
+                output += "enter a CMD id"
+            elif textid.isnumeric():
+                output += f"with CMD id {textid}"
+            else:
+                output += "invalid CMD id"
+
+        self.idHint.configure(text=output)
     
     def set_style(self, event, style):
         event.widget.configure(style)
@@ -302,17 +274,18 @@ class App(Frame):
 
     def generate(self):
         data = self.save_data()
-        for path in data:
-            if data[path] == "":
-                data[path] = "."
 
         name = data["name"]
-        if name == "" and data["source"] != "":
-            name = data["source"].split("/")[-1]
+        if name == "":
+            if data["source"] != "":
+                name = data["source"].split("/")[-1]
+            else:
+                raise Exception("Empty name")
 
         namespace = name.lower().replace(" ", "_")
-        description = data["description"].rstrip('\n')
+        description = data["description"]
         base_id = data["id"]
+        base_item = data["item"]
 
         icon = data["icon"]
         if icon == "":
@@ -342,15 +315,19 @@ class App(Frame):
         if base_id.isnumeric():
             model_id = int(base_id[:3])*10000
         elif base_id == "":
-            raise Exception("Empty id")
+            raise Exception("Empty CMD id")
         else:
-            raise TypeError(f"Invalid id: {base_id}")
+            raise TypeError(f"Invalid CMD id: {base_id}")
 
+        if base_item == "":
+            raise Exception("Empty base item")
+            
+        model_item = base_item.split(":")[-1]
         model_overrides = []
         model_file = {
             "parent": "item/generated",
             "textures": {
-                "layer0": "item/clay_ball"
+                "layer0": f"item/{model_item}"
             }
         }
 
@@ -383,7 +360,7 @@ class App(Frame):
 
         model_file["overrides"] = model_overrides
         
-        with open(f"{target_modelpath}/item/clay_ball.json", "w") as f:
+        with open(f"{target_modelpath}/item/{model_item}.json", "w") as f:
             f.write(json.dumps(model_file, indent=4))
             self.generate_status += f"\n- Finished writing {f.name}"
             
@@ -413,7 +390,7 @@ class App(Frame):
                         "entries": [
                             {
                                 "type": "minecraft:item",
-                                "name": "minecraft:clay_ball",
+                                "name": f"{base_item}",
                                 "functions": [
                                     {
                                         "function": "minecraft:set_name",
@@ -483,7 +460,7 @@ class App(Frame):
         }
         if custom_icon:
             advancement["display"]["icon"] = {
-                    "item": "minecraft:clay_ball",
+                    "item": f"{base_item}",
                     "nbt" : "{CustomModelData:%s}" % custom_icon_id 
                 }
         else:

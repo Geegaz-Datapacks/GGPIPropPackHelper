@@ -1,3 +1,6 @@
 # Packs
 Packs/*
 !Packs/Template
+
+# Data
+Resources/data.json
