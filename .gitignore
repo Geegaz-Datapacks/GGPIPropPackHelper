@@ -1,6 +1,7 @@
-# Packs
+# Packs & Exports
 Packs/*
 !Packs/Template
+Export/*
 
 # Data
 Resources/data.json
