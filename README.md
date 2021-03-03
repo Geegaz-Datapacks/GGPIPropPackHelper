@@ -1,5 +1,7 @@
 # GGPI prop pack helper
-A helper app for GGPI, including a template pack
+A helper app for GGPI, including a template pack. Check out the **[GGPI datapack](https://github.com/geegaz/GGPI/releases)** to place your props in the world.
+
+> GGPI prop pack helper was coded with Python 3.9, and so requires you to have Python installed to work. If you don't have Python installed, check out [how to create props manually](#create-a-prop-manually).
 
 ![GGPI prop pack helper interface](https://github.com/geegaz/GGPI/wiki/images/helper_app.png)
 
