@@ -331,7 +331,7 @@ class App(Frame):
             }
         }
 
-        copytree(source_modelpath, target_modelpath, dirs_exist_ok=True)
+        copytree(data['source'], data['target_resources'], dirs_exist_ok=True)
         self.generate_status += "\n- Copied source resources to destination"
         
 
